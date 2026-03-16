@@ -1,0 +1,307 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Venba Balance Sheet</title>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<style>
+
+*{box-sizing:border-box;}
+
+body{
+font-family:Arial, Helvetica, sans-serif;
+margin:0;
+background:#eef2f7;
+height:100vh;
+display:flex;
+flex-direction:column;
+}
+
+header{
+background:#0b3d91;
+color:white;
+text-align:center;
+padding:25px 10px;
+}
+
+header h1{
+margin:0;
+font-size:38px;
+font-weight:bold;
+}
+
+#datetime{
+margin-top:8px;
+font-size:16px;
+}
+
+.container{
+flex:1;
+width:100%;
+padding:30px 40px;
+}
+
+.input-section{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:15px;
+margin-bottom:20px;
+}
+
+input,select{
+width:100%;
+padding:14px;
+font-size:16px;
+border-radius:6px;
+border:1px solid #ccc;
+}
+
+button{
+padding:12px 18px;
+font-size:15px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+margin-right:10px;
+margin-top:10px;
+}
+
+.add-btn{background:#28a745;color:white;}
+.delete-btn{background:#dc3545;color:white;}
+.import-btn{background:#6f42c1;color:white;}
+.export-btn{background:#17a2b8;color:white;}
+.eod-btn{background:#343a40;color:white;}
+.report-btn{background:#0b3d91;color:white;}
+.share-btn{background:#ff9800;color:white;}
+
+table{
+width:100%;
+border-collapse:collapse;
+background:white;
+margin-top:20px;
+}
+
+th,td{
+padding:14px;
+text-align:center;
+border-bottom:1px solid #ddd;
+}
+
+th{
+background:#0b3d91;
+color:white;
+}
+
+.summary{
+margin-top:20px;
+font-size:18px;
+font-weight:bold;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>Venba Balance Sheet</h1>
+<div id="datetime"></div>
+</header>
+
+<div class="container">
+
+<div class="input-section">
+<input type="number" id="studentCount" placeholder="Number of Students">
+<input type="number" id="amount" placeholder="Amount Collected">
+<select id="paymentMode">
+<option value="">Payment Mode</option>
+<option value="Liquid Cash">Liquid Cash</option>
+<option value="GPay">GPay</option>
+</select>
+</div>
+
+<div>
+<button class="add-btn" onclick="addEntry()">Add</button>
+<button class="delete-btn" onclick="deleteEntry()">Delete</button>
+<button class="import-btn" onclick="document.getElementById('excelFile').click()">Import Excel</button>
+<button class="export-btn" onclick="exportExcel()">Export to Excel</button>
+<button class="eod-btn" onclick="endOfDayExport()">End of Day Export</button>
+</div>
+
+<input type="file" id="excelFile" style="display:none" accept=".xlsx,.xls" onchange="importExcel(event)">
+
+<table id="dataTable">
+<thead>
+<tr>
+<th>No</th>
+<th>Students</th>
+<th>Amount</th>
+<th>Payment Mode</th>
+</tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+
+<div class="summary" id="summary"></div>
+
+<div>
+<button class="report-btn" onclick="generateReport()">Generate Report</button>
+<button class="share-btn" onclick="shareReport()">Share</button>
+</div>
+
+</div>
+
+<script>
+
+let count=0;
+let totalStudents=0;
+let totalAmount=0;
+
+function updateDateTime(){
+const now=new Date();
+const ist=now.toLocaleString("en-IN",{timeZone:"Asia/Kolkata"});
+document.getElementById("datetime").innerText="Date & Time (IST): "+ist;
+}
+setInterval(updateDateTime,1000);
+updateDateTime();
+
+function addEntry(){
+
+let students=document.getElementById("studentCount").value;
+let amount=document.getElementById("amount").value;
+let mode=document.getElementById("paymentMode").value;
+
+if(students==""||amount==""||mode==""){
+alert("Please fill all details");
+return;
+}
+
+count++;
+totalStudents+=Number(students);
+totalAmount+=Number(amount);
+
+let table=document.getElementById("dataTable").getElementsByTagName("tbody")[0];
+let row=table.insertRow();
+
+row.insertCell(0).innerText=count;
+row.insertCell(1).innerText=students;
+row.insertCell(2).innerText=amount;
+row.insertCell(3).innerText=mode;
+
+document.getElementById("studentCount").value="";
+document.getElementById("amount").value="";
+document.getElementById("paymentMode").value="";
+}
+
+function deleteEntry(){
+
+let table=document.getElementById("dataTable").getElementsByTagName("tbody")[0];
+
+if(table.rows.length>0){
+
+let lastRow=table.rows[table.rows.length-1];
+
+totalStudents-=Number(lastRow.cells[1].innerText);
+totalAmount-=Number(lastRow.cells[2].innerText);
+
+table.deleteRow(table.rows.length-1);
+
+count--;
+}
+}
+
+function generateReport(){
+
+document.getElementById("summary").innerHTML=
+"Total Students: "+totalStudents+"<br>Total Amount Collected: ₹"+totalAmount;
+
+}
+
+function shareReport(){
+
+let text="Venba Balance Sheet Report\nTotal Students: "+totalStudents+"\nTotal Amount: ₹"+totalAmount;
+
+if(navigator.share){
+navigator.share({title:"Venba Balance Sheet",text:text});
+}else{
+alert(text);
+}
+}
+
+function exportExcel(){
+
+let table=document.getElementById("dataTable");
+let wb=XLSX.utils.table_to_book(table,{sheet:"Sheet1"});
+XLSX.writeFile(wb,"Venba_Balance_Sheet.xlsx");
+}
+
+function endOfDayExport(){
+
+generateReport();
+
+let data=[
+["Venba Balance Sheet End of Day Report"],
+["Total Students",totalStudents],
+["Total Amount",totalAmount]
+];
+
+let ws=XLSX.utils.aoa_to_sheet(data);
+let wb=XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb,ws,"EndOfDay");
+
+XLSX.writeFile(wb,"Venba_End_of_Day_Report.xlsx");
+
+}
+
+function importExcel(event){
+
+let file=event.target.files[0];
+let reader=new FileReader();
+
+reader.onload=function(e){
+
+let data=new Uint8Array(e.target.result);
+let workbook=XLSX.read(data,{type:'array'});
+
+let sheet=workbook.Sheets[workbook.SheetNames[0]];
+let json=XLSX.utils.sheet_to_json(sheet,{header:1});
+
+for(let i=1;i<json.length;i++){
+
+let students=json[i][1];
+let amount=json[i][2];
+let mode=json[i][3];
+
+if(students && amount && mode){
+
+count++;
+totalStudents+=Number(students);
+totalAmount+=Number(amount);
+
+let table=document.getElementById("dataTable").getElementsByTagName("tbody")[0];
+let row=table.insertRow();
+
+row.insertCell(0).innerText=count;
+row.insertCell(1).innerText=students;
+row.insertCell(2).innerText=amount;
+row.insertCell(3).innerText=mode;
+
+}
+
+}
+
+};
+
+reader.readAsArrayBuffer(file);
+
+}
+
+</script>
+
+</body>
+</html>
