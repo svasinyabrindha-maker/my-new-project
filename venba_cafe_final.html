@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Venba Cafe</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<style>
+:root{
+  --primary:#1e3a8a;
+  --secondary:#0ea5e9;
+  --accent:#10b981;
+  --bg:#f1f5f9;
+}
+
+body{
+  font-family:Segoe UI, Arial;
+  margin:0;
+  background:var(--bg);
+  font-size:18px;
+}
+
+header{
+  background:linear-gradient(135deg,var(--primary),var(--secondary));
+  color:white;
+  text-align:center;
+  padding:20px;
+}
+
+header img{
+  width:42px;
+  vertical-align:middle;
+  margin-right:8px;
+}
+
+#datetime{
+  font-size:14px;
+  margin-top:5px;
+}
+
+.card{
+  background:white;
+  margin:10px;
+  padding:15px;
+  border-radius:15px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.1);
+}
+
+input,select{
+  width:100%;
+  padding:12px;
+  margin:8px 0;
+  border-radius:10px;
+  border:1px solid #ccc;
+  font-size:16px;
+}
+
+button{
+  width:100%;
+  padding:14px;
+  margin-top:10px;
+  border:none;
+  border-radius:12px;
+  background:var(--accent);
+  color:white;
+  font-size:18px;
+  font-weight:bold;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+th{
+  background:var(--primary);
+  color:white;
+  padding:10px;
+}
+
+td{
+  border:1px solid #ddd;
+  padding:8px;
+  text-align:center;
+}
+
+#reportPage{display:none;}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h2>
+    <img src="https://img.icons8.com/ios-filled/100/ffffff/badminton.png"/>
+    Venba Cafe
+  </h2>
+  <div id="datetime"></div>
+</header>
+
+<div id="mainPage">
+
+<div class="card">
+<input type="text" id="name" placeholder="Student Name">
+
+<select id="particulars">
+<option>Fees</option>
+<option>Membership</option>
+<option>Slot</option>
+</select>
+
+<select id="payment">
+<option>Liquid Cash</option>
+<option>GPay</option>
+<option>PhonePe</option>
+<option>Paytm</option>
+<option>Other Online</option>
+</select>
+
+<input type="number" id="debit" placeholder="Debit Amount">
+<input type="number" id="credit" placeholder="Credit Amount">
+
+<button onclick="addEntry()">Add</button>
+</div>
+
+<div class="card">
+<table id="table">
+<tr>
+<th>Name</th>
+<th>Particulars</th>
+<th>Payment</th>
+<th>Debit</th>
+<th>Credit</th>
+<th>Action</th>
+</tr>
+</table>
+</div>
+
+<div class="card">
+<h3>Total Debit: ₹ <span id="totalDebit">0</span></h3>
+<h3>Total Credit: ₹ <span id="totalCredit">0</span></h3>
+</div>
+
+<button onclick="generateReport()">Generate Report</button>
+
+</div>
+
+<div id="reportPage">
+<div class="card" id="reportContent">
+<h2>Final Report</h2>
+<p>Total Debit: ₹ <span id="rd"></span></p>
+<p>Total Credit: ₹ <span id="rc"></span></p>
+<p><b>Cash in Hand: ₹ <span id="cash"></span></b></p>
+</div>
+
+<button onclick="downloadImage()">Download Image</button>
+<button onclick="shareWhatsApp()">Share to WhatsApp</button>
+</div>
+
+<script>
+function updateTime(){
+ let now=new Date();
+ document.getElementById("datetime").innerText =
+ now.toLocaleString('en-IN',{timeZone:'Asia/Kolkata'});
+}
+setInterval(updateTime,1000);
+updateTime();
+
+let totalDebit=0,totalCredit=0;
+
+function addEntry(){
+ let name=document.getElementById("name").value;
+ let part=document.getElementById("particulars").value;
+ let pay=document.getElementById("payment").value;
+ let debit=parseFloat(document.getElementById("debit").value)||0;
+ let credit=parseFloat(document.getElementById("credit").value)||0;
+
+ if(!name){ alert("Enter student name"); return; }
+
+ let table=document.getElementById("table");
+ let row=table.insertRow();
+
+ row.insertCell(0).innerText=name;
+ row.insertCell(1).innerText=part;
+ row.insertCell(2).innerText=pay;
+ row.insertCell(3).innerText=debit;
+ row.insertCell(4).innerText=credit;
+
+ let action=row.insertCell(5);
+ action.innerHTML="<button onclick='editRow(this)'>Edit</button><button onclick='deleteRow(this)'>Delete</button>";
+
+ totalDebit+=debit;
+ totalCredit+=credit;
+
+ updateTotals();
+ clearInputs();
+}
+
+function updateTotals(){
+ document.getElementById("totalDebit").innerText=totalDebit;
+ document.getElementById("totalCredit").innerText=totalCredit;
+}
+
+function deleteRow(btn){
+ let row=btn.parentNode.parentNode;
+ let debit=parseFloat(row.cells[3].innerText)||0;
+ let credit=parseFloat(row.cells[4].innerText)||0;
+
+ totalDebit-=debit;
+ totalCredit-=credit;
+
+ row.remove();
+ updateTotals();
+}
+
+function editRow(btn){
+ let row=btn.parentNode.parentNode;
+ document.getElementById("name").value=row.cells[0].innerText;
+ document.getElementById("particulars").value=row.cells[1].innerText;
+ document.getElementById("payment").value=row.cells[2].innerText;
+ document.getElementById("debit").value=row.cells[3].innerText;
+ document.getElementById("credit").value=row.cells[4].innerText;
+
+ deleteRow(btn);
+}
+
+function clearInputs(){
+ document.getElementById("name").value="";
+ document.getElementById("debit").value="";
+ document.getElementById("credit").value="";
+}
+
+function generateReport(){
+ document.getElementById("mainPage").style.display="none";
+ document.getElementById("reportPage").style.display="block";
+
+ document.getElementById("rd").innerText=totalDebit;
+ document.getElementById("rc").innerText=totalCredit;
+ document.getElementById("cash").innerText=totalCredit-totalDebit;
+}
+
+function downloadImage(){
+ html2canvas(document.getElementById("reportContent")).then(canvas=>{
+ let link=document.createElement("a");
+ link.download="report.png";
+ link.href=canvas.toDataURL();
+ link.click();
+ });
+}
+
+function shareWhatsApp(){
+ let text=`Venba Cafe Report:\nDebit ₹${totalDebit}\nCredit ₹${totalCredit}\nCash ₹${totalCredit-totalDebit}`;
+ window.open("https://wa.me/?text="+encodeURIComponent(text));
+}
+</script>
+
+</body>
+</html>
